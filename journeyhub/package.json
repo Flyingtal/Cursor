@@ -1,0 +1,43 @@
+{
+  "name": "journeyhub",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "prisma": "prisma"
+  },
+  "dependencies": {
+    "@prisma/client": "latest",
+    "next": "latest",
+    "next-auth": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "swr": "latest",
+    "tailwindcss": "latest",
+    "@headlessui/react": "latest",
+    "@heroicons/react": "latest",
+    "clsx": "latest",
+    "zod": "latest",
+    "nodemailer": "latest",
+    "twilio": "latest",
+    "date-fns": "latest",
+    "uuid": "latest",
+    "axios": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "latest",
+    "eslint": "latest",
+    "eslint-config-next": "latest",
+    "postcss": "latest",
+    "prisma": "latest",
+    "typescript": "latest",
+    "@tailwindcss/forms": "latest",
+    "@tailwindcss/typography": "latest"
+  }
+}
