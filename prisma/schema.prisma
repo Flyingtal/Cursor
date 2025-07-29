@@ -1,0 +1,227 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  organizedTrips   Trip[]           @relation("TripOrganizer")
+  tripMembers      TripMember[]
+  suggestions      Suggestion[]
+  comments         Comment[]
+  rsvps            RSVP[]
+  expenses         Expense[]
+  photos           Photo[]
+  invitations      Invitation[]
+}
+
+model Trip {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  destination String
+  organizerId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  organizer    User           @relation("TripOrganizer", fields: [organizerId], references: [id])
+  members      TripMember[]
+  activities   Activity[]
+  suggestions  Suggestion[]
+  expenses     Expense[]
+  photos       Photo[]
+  invitations  Invitation[]
+}
+
+model TripMember {
+  id     String @id @default(cuid())
+  userId String
+  tripId String
+  role   String @default("member") // "organizer" or "member"
+  joinedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  trip Trip @relation(fields: [tripId], references: [id])
+
+  @@unique([userId, tripId])
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  email     String
+  tripId    String
+  inviterId String
+  token     String   @unique
+  status    String   @default("pending") // "pending", "accepted", "declined"
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  trip    Trip @relation(fields: [tripId], references: [id])
+  inviter User @relation(fields: [inviterId], references: [id])
+
+  @@unique([email, tripId])
+}
+
+model Activity {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  latitude    Float?
+  longitude   Float?
+  startTime   DateTime
+  endTime     DateTime?
+  cost        Float?
+  image       String?
+  tripId      String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  order       Int       @default(0)
+
+  trip     Trip      @relation(fields: [tripId], references: [id])
+  rsvps    RSVP[]
+  comments Comment[]
+  expenses Expense[]
+}
+
+model Suggestion {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  location    String?
+  link        String?
+  tripId      String
+  suggestedBy String
+  votes       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  trip        Trip           @relation(fields: [tripId], references: [id])
+  user        User           @relation(fields: [suggestedBy], references: [id])
+  comments    Comment[]
+  votes_cast  SuggestionVote[]
+}
+
+model SuggestionVote {
+  id           String @id @default(cuid())
+  userId       String
+  suggestionId String
+  vote         Int    // 1 for upvote, -1 for downvote
+
+  suggestion Suggestion @relation(fields: [suggestionId], references: [id])
+
+  @@unique([userId, suggestionId])
+}
+
+model Comment {
+  id           String    @id @default(cuid())
+  content      String
+  authorId     String
+  activityId   String?
+  suggestionId String?
+  parentId     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  author     User        @relation(fields: [authorId], references: [id])
+  activity   Activity?   @relation(fields: [activityId], references: [id])
+  suggestion Suggestion? @relation(fields: [suggestionId], references: [id])
+  parent     Comment?    @relation("CommentReplies", fields: [parentId], references: [id])
+  replies    Comment[]   @relation("CommentReplies")
+}
+
+model RSVP {
+  id         String @id @default(cuid())
+  userId     String
+  activityId String
+  status     String // "yes", "no", "maybe"
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id])
+  activity Activity @relation(fields: [activityId], references: [id])
+
+  @@unique([userId, activityId])
+}
+
+model Expense {
+  id          String    @id @default(cuid())
+  title       String
+  amount      Float
+  currency    String    @default("USD")
+  category    String?
+  paidBy      String
+  tripId      String?
+  activityId  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user     User      @relation(fields: [paidBy], references: [id])
+  trip     Trip?     @relation(fields: [tripId], references: [id])
+  activity Activity? @relation(fields: [activityId], references: [id])
+}
+
+model Photo {
+  id          String   @id @default(cuid())
+  url         String
+  caption     String?
+  uploadedBy  String
+  tripId      String
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [uploadedBy], references: [id])
+  trip Trip @relation(fields: [tripId], references: [id])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
